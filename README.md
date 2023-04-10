@@ -17,8 +17,16 @@ Ansible connects as root via SSH to the guests and bootstraps them.
 
 # Running
 
-Ensure 3D acceleration is enabled in virt-manager.
+1. Create the VM with 3D acceleration enabled.
+2. Boot the archlinux VM from the live CD.
+3. Run `ip address show` and add the IP address into `inventory.yaml`.
 
 ```bash
 ansible-playbook -i inventory.yaml archlinux-vm-bootstrap.yaml --user root --ask-pass
 ```
+
+4. If the VM reboots into the live CD, remove the media and reboot.
+
+You should boot into a VM that looks like this:
+
+![preview.png](preview.png)
