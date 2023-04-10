@@ -1,0 +1,107 @@
+- name: Install dependencies
+  pacman:
+    name: 
+      - picom
+      - i3
+      - polybar
+      - rofi
+      - feh
+      - xorg-xev
+      - xorg-xrandr
+    state: present
+
+- name: Copy config
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    src: ../files/config
+    dest: "{{ user_conf_dir }}/i3/config"
+
+- name: Copy .xprofile
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    src: ../files/.xprofile
+    dest: "{{ user_dir }}/.xprofile"
+
+- name: Create SDDM conf directory
+  file:
+    path: "{{ sddm_conf_dir }}"
+    state: directory
+
+- name: Create SDDM session
+  copy:
+    content: |
+      [Autologin]
+      User={{ username }}
+      Session=i3
+    dest: "{{ sddm_conf_dir }}/autologin.conf"
+
+- name: Create picom conf directory
+  become: true
+  become_user: "{{ username }}"
+  file:
+    path: "{{ picom_conf_dir }}"
+    state: directory
+
+- name: Copy picom conf
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    src: ../files/picom.conf
+    dest: "{{ picom_conf_dir }}/picom.conf"
+    owner: "{{ username }}"
+
+- name: Clone polybar-themes repo
+  become: true
+  become_user: "{{ username }}"
+  git:
+    repo: https://github.com/adi1090x/polybar-themes.git
+    dest: "{{ user_downloads_dir }}/polybar-themes"
+    depth: 1
+
+- name: Run setup script
+  become: true
+  become_user: "{{ username }}"
+  expect:
+    chdir: "{{ user_downloads_dir }}/polybar-themes"
+    command: ./setup.sh
+    responses:
+      '\[?\] Select Option : ': '2'
+
+- name: Copy config.ini
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    src: ../files/config.ini
+    dest: "{{ polybar_conf_dir }}/forest/config.ini"
+
+- name: Copy modules.ini
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    src: ../files/modules.ini
+    dest: "{{ polybar_conf_dir }}/forest/modules.ini"
+
+- name: Clone rofi-themes-collection repo
+  become: true
+  become_user: "{{ username }}"
+  git:
+    repo: https://github.com/lr-tech/rofi-themes-collection.git
+    dest: "{{ user_downloads_dir }}/rofi-themes-collection"
+    depth: 1
+
+- name: Create rofi themes directory
+  become: true
+  become_user: "{{ username }}"
+  file:
+    path: "{{ rofi_conf_dir }}/themes"
+    state: directory
+    
+- name: Install themes
+  become: true
+  become_user: "{{ username }}"
+  copy:
+    remote_src: yes
+    src: "{{ user_downloads_dir }}/rofi-themes-collection/themes"
+    dest: "{{ rofi_conf_dir }}"

@@ -1,0 +1,31 @@
+- name: Install konsole
+  pacman: 
+    name: konsole
+    state: present
+
+- name: Configure konsole menu bar
+  ini_file:
+    path: "/home/{{ username }}/.config/konsolerc"
+    section: MainWindow
+    option: MenuBar
+    value: Disabled
+
+- name: Install thunar
+  pacman: 
+    name: thunar
+    state: present
+
+- name: Check if brave is installed
+  stat:
+    path: /usr/bin/brave
+  register: binary_stat
+
+- name: Install brave
+  when: not binary_stat.stat.exists
+  become: true
+  become_user: "{{ username }}"
+  expect:
+    command: yay -S brave-bin --answerclean None --answerdiff None
+    responses:
+      '\[sudo\] password': "{{ user_pass }}"
+      'Proceed with installation\? \[Y/n\]': 'Y'

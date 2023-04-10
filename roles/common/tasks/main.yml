@@ -1,0 +1,26 @@
+- name: Create hostname
+  copy:
+    content: "{{ inventory_hostname }}\n"
+    dest: /etc/hostname
+
+- name: Install common packages
+  pacman:
+    name: "{{ common_packages }}"
+
+- name: Enable sudo wheel group
+  lineinfile:
+    path: /etc/sudoers
+    search_string: '# %wheel ALL=(ALL:ALL) ALL'
+    line: '%wheel ALL=(ALL:ALL) ALL'
+
+- name: Create XDG_USER directories
+  command: xdg-user-dirs-update
+
+- name: Install python-setuptools
+  pacman:
+    name: python-setuptools
+    state: present
+
+- name: Install pip pexpect
+  pip:
+    name: pexpect

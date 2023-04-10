@@ -1,0 +1,11 @@
+- name: Install xorg-server
+  pacman:
+    name: xorg-server
+    state: present
+
+- name: Initialise Xorg configuration
+  shell: |
+    Xorg :0 -configure
+    mv /root/xorg.conf.new /etc/X11/xorg.conf
+  args:
+    creates: /etc/X11/xorg.conf

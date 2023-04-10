@@ -1,0 +1,28 @@
+- name: Set timezone
+  file:
+    src: /usr/share/zoneinfo/{{ timezone }}
+    dest: /etc/localtime
+    state: link
+
+- name: Update hwclock
+  command: hwclock --systohc
+  args:
+    creates: /etc/adjtime
+
+- name: Update locale.gen
+  lineinfile:
+    path: /etc/locale.gen
+    search_string: "#{{ locale }}"
+    line: "{{ locale }}"
+
+- name: Generate locale
+  command: locale-gen
+
+- name: Update locale.conf
+  lineinfile:
+    path: /etc/locale.conf
+    search_string: LANG="C.UTF-8"
+    line: LANG="{{ language }}"
+
+- name: Configure X11 keymap
+  command: localectl --no-convert set-x11-keymap {{ layout }} {{ model }} {{ variant }}

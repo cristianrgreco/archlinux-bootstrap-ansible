@@ -1,0 +1,13 @@
+common_packages:
+  - base-devel
+  - xdg-user-dirs
+  - spice-vdagent
+  - git
+  - man-db
+  - man-pages
+  - noto-fonts
+  - sudo
+  - which
+  - python-pip
+  - zsh
+  - fzf

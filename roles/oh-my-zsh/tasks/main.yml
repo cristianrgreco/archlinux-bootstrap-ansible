@@ -1,0 +1,41 @@
+- name: Download oh-my-zsh install script
+  get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: /tmp/omz-install.sh
+    mode: "0755"
+
+- name: Check if oh-my-zsh is already installed
+  stat:
+    path: /home/{{ username }}/.oh-my-zsh
+  register: zsh_dir
+
+- name: Run oh-my-zsh install script
+  become: true
+  become_user: "{{ username }}"
+  command: sh -c "/tmp/omz-install.sh --unattended"
+  when: not zsh_dir.stat.exists
+
+- name: Change user default shell to zsh
+  user:
+    name: "{{ username }}"
+    shell: /bin/zsh
+
+- name: Clone zsh-autosuggestions plugin
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: /home/{{ username }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    depth: 1
+
+- name: Clone zsh-syntax-highlighting plugin
+  git:
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+    dest: /home/{{ username }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    depth: 1
+
+- name: Update plugins configuration
+  become: true
+  become_user: "{{ username }}"
+  lineinfile:
+    path: /home/{{ username }}/.zshrc
+    regexp: 'plugins=\(.+\)'
+    line: 'plugins=(git fzf zsh-autosuggestions zsh-syntax-highlighting)'

@@ -1,0 +1,1 @@
+user_downloads_dir: /home/{{ username }}/Downloads

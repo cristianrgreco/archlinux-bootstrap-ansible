@@ -1,0 +1,22 @@
+- name: Clone yay repo
+  become: true
+  become_user: "{{ username }}"
+  git:
+    repo: https://aur.archlinux.org/yay.git
+    dest: "{{ user_downloads_dir }}/Downloads/yay"
+    depth: 1
+
+- name: Check if yay binary is installed
+  stat:
+    path: /usr/bin/yay
+  register: binary_stat
+
+- name: Build yay
+  when: not binary_stat.stat.exists
+  become: true
+  become_user: "{{ username }}"
+  expect:
+    chdir: "{{ user_downloads_dir }}/yay"
+    command: makepkg -si --noconfirm
+    responses:
+      '\[sudo\] password': "{{ password }}"

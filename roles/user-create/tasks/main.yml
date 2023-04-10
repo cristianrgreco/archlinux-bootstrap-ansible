@@ -1,0 +1,12 @@
+- name: Create new user
+  user:
+    name: "{{ username }}"
+    password: "{{ password_hashed }}"
+    groups: wheel
+    shell: /bin/bash
+    createhome: true
+
+- name: Allow user to control system power with sudo
+  copy:
+    content: "{{ username }} ALL =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl halt,/usr/bin/systemctl reboot\n"
+    dest: /etc/sudoers.d/systemctl-power

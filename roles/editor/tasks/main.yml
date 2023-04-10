@@ -1,0 +1,28 @@
+- name: Install {{ program }}
+  pacman:
+    name: "{{ program }}"
+    state: present
+
+- name: Set default editor
+  copy:
+    content: |
+      export EDITOR={{ program }}
+      {% for alias in aliases %}
+      alias {{ alias }}={{ program }}
+      {% endfor %}
+    dest: /etc/profile.d/editor.sh
+    mode: 0755
+
+- name: Set visudo editor
+  lineinfile:
+    path: /etc/sudoers
+    insertafter: "^## Defaults specification"
+    line: Defaults editor=/usr/bin/{{ program }}
+
+- name: Set aliases for zsh
+  lineinfile:
+    path: /home/{{ username }}/.zshrc
+    line: alias {{ item }}={{ program }}
+    state: present
+    create: true
+  with_items: "{{ aliases }}"

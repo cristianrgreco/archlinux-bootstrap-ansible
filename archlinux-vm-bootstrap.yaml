@@ -1,0 +1,20 @@
+- name: Archlinux VM bootstrap
+  hosts: vms
+  vars_prompt:
+    - name: username
+      prompt: 'Username of new user'
+    - name: password
+      prompt: 'Password of new user'
+      private: true
+  roles:
+    - common
+    - display-server-xorg
+    - localisation
+    - display-manager-sddm
+    - user-create
+    - aur-helper-yay
+    - window-manager-i3
+    - applications
+    - oh-my-zsh
+    - { role: editor, program: vim, aliases: ["vi"] }
+    - reboot

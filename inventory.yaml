@@ -1,4 +1,4 @@
-virtualmachines:
+vms:
   hosts:
     vm01:
       ansible_host: 192.168.122.243
