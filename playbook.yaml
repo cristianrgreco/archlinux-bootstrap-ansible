@@ -1,0 +1,344 @@
+- name: Timezone
+  hosts: virtualmachines
+  tasks:
+    - name: Set timezone
+      file:
+        src: /usr/share/zoneinfo/Europe/London
+        dest: /etc/localtime
+        state: link
+    - name: Update hwclock
+      command: hwclock --systohc
+      args:
+        creates: /etc/adjtime
+
+- name: Localisation
+  hosts: virtualmachines
+  tasks:
+    - name: Update locale.gen
+      lineinfile:
+        path: /etc/locale.gen
+        search_string: '#en_GB.UTF-8 UTF-8'
+        line: 'en_GB.UTF-8 UTF-8'
+    - name: Generate locale
+      command: locale-gen
+    - name: Update locale.conf
+      lineinfile:
+        path: /etc/locale.conf
+        search_string: 'LANG="C.UTF-8"'
+        line: 'LANG="en_GB.UTF-8"'
+
+- name: Network configuration
+  hosts: virtualmachines
+  tasks:
+    - name: Create hostname
+      copy:
+        content: "{{ inventory_hostname }}\n"
+        dest: /etc/hostname
+
+- name: Install editor
+  hosts: virtualmachines
+  tasks:
+    - name: Install vim
+      pacman:
+        name: vim
+        state: present
+    - name: Set editor
+      copy:
+        content: |
+          export EDITOR=vim
+          alias vi=vim
+        dest: /etc/profile.d/editor.sh
+        mode: 0755
+
+- name: Install and setup common packages
+  hosts: virtualmachines
+  tasks:
+    - name: Install packages
+      pacman:
+        name:
+          - base-devel
+          - xdg-user-dirs
+          - spice-vdagent
+          - git
+          - man-db
+          - man-pages
+          - noto-fonts
+          - sudo
+          - which
+          - python-pip
+          - zsh
+          - fzf
+    - name: Enable wheel group sudo
+      lineinfile:
+        path: /etc/sudoers
+        search_string: '# %wheel ALL=(ALL:ALL) ALL'
+        line: '%wheel ALL=(ALL:ALL) ALL'
+    - name: Create default directories
+      command: xdg-user-dirs-update
+    - name: Install python-setuptools
+      pacman:
+        name: python-setuptools
+        state: present
+    - name: Install pip pexpect
+      pip:
+        name: pexpect
+
+- name: Install display server
+  hosts: virtualmachines
+  tasks:
+    - name: Install xorg-server
+      pacman:
+        name: xorg-server
+        state: present
+    - name: Init configuration
+      shell: |
+        Xorg :0 -configure
+        mv /root/xorg.conf.new /etc/X11/xorg.conf
+      args:
+        creates: /etc/X11/xorg.conf
+    - name: Configure keymap
+      command: localectl --no-convert set-x11-keymap gb pc105 mac
+
+- name: Install display manager
+  hosts: virtualmachines
+  tasks:
+    - name: Install SDDM
+      pacman:
+        name: sddm
+        state: present
+    - name: Enable SDDM service
+      systemd:
+        name: sddm
+        enabled: yes
+
+- name: Install window manager
+  hosts: virtualmachines
+  tasks:
+    - name: Install i3 and extras
+      pacman:
+        name: 
+          - picom
+          - i3
+          - polybar
+          - rofi
+          - feh
+          - xorg-xev
+          - xorg-xrandr
+        state: present
+    - name: Create SDDM conf directory
+      file:
+        path: /etc/sddm.conf.d
+        state: directory
+
+- name: Create user
+  hosts: virtualmachines
+  vars_prompt:
+      - name: user_name
+        prompt: 'Enter the username: '
+      - name: user_pass
+        prompt: 'Enter the password: '
+        private: true
+  vars:
+    hashed_user_pass: "{{ user_pass | password_hash('sha512') }}"
+  tasks:
+    - name: Create user
+      user:
+        name: "{{ user_name }}"
+        password: "{{ hashed_user_pass }}"
+        groups: wheel
+        shell: /bin/bash
+        createhome: true
+    - name: Allow user to control power
+      copy:
+        content: "{{ user_name }} ALL =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl halt,/usr/bin/systemctl reboot\n"
+        dest: /etc/sudoers.d/systemctl-power
+    - name: Set credentials as fact
+      set_fact:
+        user_name: "{{ user_name }}"
+        user_pass: "{{ user_pass }}"
+        hashed_user_pass: "{{ hashed_user_pass }}"
+
+- name: Install AUR helper (YAY)
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Clone yay repo
+      git:
+        repo: https://aur.archlinux.org/yay.git
+        dest: "/home/{{ user_name }}/Downloads/yay"
+        depth: 1
+    - name: Check if yay binary is in path
+      stat:
+        path: /usr/bin/yay
+      register: binary_stat
+    - name: Build yay
+      when: not binary_stat.stat.exists
+      expect:
+        chdir: "/home/{{ user_name }}/Downloads/yay"
+        command: makepkg -si --noconfirm
+        responses:
+          '\[sudo\] password': "{{ user_pass }}"
+
+- name: Configure picom
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Create picom conf directory
+      file:
+        path: "/home/{{ user_name }}/.config/picom"
+        state: directory
+    - name: Copy picom conf
+      copy:
+        src: picom/picom.conf
+        dest: "/home/{{ user_name }}/.config/picom/picom.conf"
+        owner: "{{ user_name }}"
+
+- name: Configure polybar
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Clone polybar-themes repo
+      git:
+        repo: https://github.com/adi1090x/polybar-themes.git
+        dest: "/home/{{ user_name }}/Downloads/polybar-themes"
+        depth: 1
+    - name: Run setup script
+      expect:
+        chdir: "/home/{{ user_name }}/Downloads/polybar-themes"
+        command: ./setup.sh
+        responses:
+          '\[?\] Select Option : ': '2'
+    - name: Copy config.ini
+      copy:
+        src: polybar/config.ini
+        dest: "/home/{{ user_name }}/.config/polybar/forest/config.ini"
+    - name: Copy modules.ini
+      copy:
+        src: polybar/modules.ini
+        dest: "/home/{{ user_name }}/.config/polybar/forest/modules.ini"
+
+- name: Configure rofi
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Clone rofi-themes-collection repo
+      git:
+        repo: https://github.com/lr-tech/rofi-themes-collection.git
+        dest: "/home/{{ user_name }}/Downloads/rofi-themes-collection"
+        depth: 1
+    - name: Create rofi themes directory
+      file:
+        path: "/home/{{ user_name }}/.local/share/rofi/themes"
+        state: directory
+    - name: Install themes
+      copy:
+        remote_src: yes
+        src: "/home/{{ user_name }}/Downloads/rofi-themes-collection/themes"
+        dest: "/home/{{ user_name }}/.local/share/rofi"
+
+- name: Configure i3
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Copy config
+      copy:
+        src: i3/config
+        dest: "/home/{{ user_name }}/.config/i3/config"
+    - name: Copy .xprofile
+      copy:
+        src: i3/.xprofile
+        dest: "/home/{{ user_name }}/.xprofile"
+    - name: Create SDDM session
+      copy:
+        content: |
+          [Autologin]
+          User={{ user_name }}
+          Session=i3
+        dest: /etc/sddm.conf.d/autologin.conf
+
+- name: Install console
+  hosts: virtualmachines
+  tasks:
+    - name: Install konsole
+      pacman: 
+        name: konsole
+        state: present
+    - name: Configure konsole menu bar
+      ini_file:
+        path: "/home/{{ user_name }}/.config/konsolerc"
+        section: MainWindow
+        option: MenuBar
+        value: Disabled
+
+- name: Install file manager
+  hosts: virtualmachines
+  tasks:
+    - name: Install thunar
+      pacman: 
+        name: thunar
+        state: present
+
+- name: Install browser
+  hosts: virtualmachines
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Check if brave binary is in path
+      stat:
+        path: /usr/bin/brave
+      register: binary_stat
+    - name: Install brave
+      expect:
+        command: yay -S brave-bin --answerclean None --answerdiff None
+        responses:
+          '\[sudo\] password': "{{ user_pass }}"
+          'Proceed with installation\? \[Y/n\]': 'Y'
+      when: not binary_stat.stat.exists
+
+- name: Install oh-my-zsh
+  hosts: virtualmachines
+  tasks:
+    - name: Download install script
+      get_url:
+        url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        dest: /tmp/omz-install.sh
+        mode: "0755"
+    - name: Check if oh my zsh already installed
+      stat:
+        path: "/home/{{ user_name }}/.oh-my-zsh"
+      register: zsh_dir
+    - name: Run install script
+      become: true
+      become_user: "{{ user_name }}"
+      command: sh -c "/tmp/omz-install.sh --unattended"
+      when: not zsh_dir.stat.exists
+    - name: Change default shell
+      user:
+        name: "{{ user_name }}"
+        shell: /bin/zsh
+    - name: Clone zsh-autosuggestions
+      git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions.git
+        dest: "/home/{{ user_name }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        depth: 1
+    - name: Clone zsh-syntax-highlighting
+      git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        dest: "/home/{{ user_name }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+        depth: 1
+    - name: Update plugins
+      become: true
+      become_user: "{{ user_name }}"
+      lineinfile:
+        path: "/home/{{ user_name }}/.zshrc"
+        regexp: 'plugins=\(.+\)'
+        line: 'plugins=(git fzf zsh-autosuggestions zsh-syntax-highlighting)'
+
+# todo, split up, get actual templates and parameterise, e.g corner radius, introduce variables in tasks for common
+# things like paths. Consider reboot at the end?
+# roles like: vms: arch-bootstrap, xorg, i3, oh-my-zsh, basic-applications (brave,thunar,console)

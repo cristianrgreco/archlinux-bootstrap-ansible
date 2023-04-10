@@ -1,0 +1,19 @@
+spice-vdagent &
+
+picom &
+
+~/.config/polybar/launch.sh --forest &
+
+backgroundImagesDir=~/Downloads/polybar-themes/wallpapers
+backgroundImage=$(ls ${backgroundImagesDir} | shuf | head -1)
+feh --bg-scale ~/Downloads/polybar-themes/wallpapers/${backgroundImage} &
+
+$(
+  xev -root -event randr \
+    | grep --line-buffered 'subtype XRROutputChangeNotifyEvent' \
+    | while read _; do 
+        xrandr --output Virtual-1 --auto
+        feh --bg-scale ~/Downloads/polybar-themes/wallpapers/${backgroundImage} &
+        polybar-msg cmd restart &
+      done
+) &
