@@ -35,7 +35,8 @@ ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook \
   -i inventory.yaml  \
   --user root \
   --ask-pass \
-  archlinux-setup.yaml```
+  archlinux-setup.yaml
+```
 
 6. Enable automatic VM resizing in virt-manager.
 
