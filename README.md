@@ -19,7 +19,11 @@ Ansible connects as root via SSH to the guests and bootstraps/sets them up.
 3. Run `ip address show` and add the IP address into `inventory.yaml`.
 
 ```bash
-ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-bootstrap.yaml --user root --ask-pass
+ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook \
+  -i inventory.yaml  \
+  --user root \
+  --ask-pass \
+  archlinux-bootstrap.yaml
 ```
 
 4. The VM will shutdown after bootstrapping. If it reboots into the live CD, power it off.
@@ -27,8 +31,11 @@ ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-boo
 
 
 ```bash
-ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-setup.yaml --user root --ask-pass
-```
+ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook \
+  -i inventory.yaml  \
+  --user root \
+  --ask-pass \
+  archlinux-setup.yaml```
 
 6. Enable automatic VM resizing in virt-manager.
 
