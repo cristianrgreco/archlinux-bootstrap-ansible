@@ -1,0 +1,20 @@
+- name: Create partition
+  parted:
+    device: "{{ disk }}"
+    number: "{{ number }}"
+    part_type: primary
+    fs_type: ext4
+    state: present
+
+- name: Format partition
+  filesystem:
+    dev: "{{ disk }}{{ number }}"
+    fstype: ext4
+    state: present
+
+- name: Mount partition
+  mount: 
+    path: "{{ mount_path }}"
+    src: "{{ disk }}{{ number }}"
+    state: mounted
+    fstype: ext4

@@ -3,5 +3,5 @@ user_conf_dir: /home/{{ username }}/.config
 user_downloads_dir: /home/{{ username }}/Downloads
 picom_conf_dir: /home/{{ username }}/.config/picom
 polybar_conf_dir: /home/{{ username }}/.config/polybar
-sddm_conf_dir: /etc/sddm/sddm.conf.d
+sddm_conf_dir: /etc/sddm.conf.d
 rofi_conf_dir: /home/{{ username }}/.local/share/rofi

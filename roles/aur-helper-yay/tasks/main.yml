@@ -3,7 +3,7 @@
   become_user: "{{ username }}"
   git:
     repo: https://aur.archlinux.org/yay.git
-    dest: "{{ user_downloads_dir }}/Downloads/yay"
+    dest: "{{ user_downloads_dir }}/yay"
     depth: 1
 
 - name: Check if yay binary is installed

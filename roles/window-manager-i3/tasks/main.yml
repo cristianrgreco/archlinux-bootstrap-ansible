@@ -10,6 +10,13 @@
       - xorg-xrandr
     state: present
 
+- name: Create i3 conf directory
+  become: true
+  become_user: "{{ username }}"
+  file: 
+    path: "{{ user_conf_dir }}/i3"
+    state: directory
+
 - name: Copy config
   become: true
   become_user: "{{ username }}"

@@ -4,6 +4,8 @@
     state: present
 
 - name: Configure konsole menu bar
+  become: true
+  become_user: "{{ username }}"
   ini_file:
     path: "/home/{{ username }}/.config/konsolerc"
     section: MainWindow
@@ -27,5 +29,5 @@
   expect:
     command: yay -S brave-bin --answerclean None --answerdiff None
     responses:
-      '\[sudo\] password': "{{ user_pass }}"
+      '\[sudo\] password': "{{ password }}"
       'Proceed with installation\? \[Y/n\]': 'Y'

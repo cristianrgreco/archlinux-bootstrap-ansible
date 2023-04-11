@@ -1,0 +1,3 @@
+disk: /dev/vda
+number: 1
+mount_path: /mnt
