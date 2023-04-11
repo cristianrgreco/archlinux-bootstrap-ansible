@@ -10,20 +10,27 @@ Guest dependencies:
 
 # How it works
 
-Ansible connects as root via SSH to the guests and bootstraps them.
+Ansible connects as root via SSH to the guests and bootstraps/sets them up.
 
 # Running
 
-1. Create the VM with 3D acceleration enabled.
-2. Boot the archlinux VM from the live CD.
-3. Set the root password to `root` via `passwd`.
-4. Run `ip address show` and add the IP address into `inventory.yaml`.
+1. Boot the archlinux VM from the live CD.
+2. Set the root password to `root` via `passwd`.
+3. Run `ip address show` and add the IP address into `inventory.yaml`.
 
 ```bash
-ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-vm-bootstrap.yaml --user root --ask-pass
+ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-bootstrap.yaml --user root --ask-pass
 ```
 
-5. The VM will reboot after bootstrapping. If it reboots into the live CD, power down, remove the live CD, and power on.
+4. The VM will shutdown after bootstrapping. If it reboots into the live CD, power it off.
+5. Follow the bootstrap instructions emitted by Ansible.
+
+
+```bash
+ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.yaml archlinux-setup.yaml --user root --ask-pass
+```
+
+6. Enable automatic VM resizing in virt-manager.
 
 Once complete, you should boot into a VM that looks like this:
 

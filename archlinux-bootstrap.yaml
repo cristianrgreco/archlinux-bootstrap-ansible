@@ -1,0 +1,20 @@
+- name: Archlinux bootstrap
+  hosts: vms
+  roles:
+    - bootstrap
+    - shutdown
+  tasks:
+    - name: "Prompt user"
+      debug:
+        msg:
+          - "The VM has been shutdown. Perform the following:"
+          - ""
+          - "1. Configure the VM to enable 3D acceleration."
+          - "2. Power on the VM."
+          - "3. Run `ip address show`."
+          - ""
+          - "If the IP address has changed from what's in `inventory.yaml`, perform the following:"
+          - "1. `ssh-keygen -R <old-ip>`"
+          - "2. Update `inventory.yaml` with the new IP."
+          - ""
+          - "Once complete, run the next playbook."

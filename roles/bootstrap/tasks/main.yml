@@ -1,77 +1,40 @@
-- name: Check if parted is installed
+- name: Check if arch-chroot is installed
   stat:
-    path: /mnt/usr/bin/parted
-  register: parted_check
-
-- name: Install parted
-  when: not parted_check.stat.exists
-  shell: arch-chroot /mnt pacman -Syu --noconfirm parted
+    path: /bin/arch-chroot
+  register: arch_chroot_check
 
 - name: Create and mount partition
+  when: arch_chroot_check.stat.exists
   include_role:
     name: partition-create
   vars:
     disk: /dev/vda
     mount_path: /mnt
 
-- name: Check if base packages already installed
-  stat:
-    path: /mnt/sys
-  register: sys
-
 - name: Install base packages
-  when: not sys.stat.exists
+  when: arch_chroot_check.stat.exists
   command: pacstrap -K /mnt base linux linux-firmware
 
-- name: Check if fstab already generated
-  lineinfile:
-    path: /mnt/etc/fstab
-    regexp: '^UUID=.*$'
-    state: absent
-  check_mode: yes
-  changed_when: false
-  register: fstab_generated
-
 - name: Generate fstab
-  when: fstab_generated.found is undefined or not fstab_generated.found
+  when: arch_chroot_check.stat.exists
   shell: genfstab -U /mnt > /mnt/etc/fstab
 
-- name: Check if grub is installed
-  stat:
-    path: /mnt/usr/bin/grub-mkconfig
-  register: grub_check
-
 - name: Install grub
-  when: not grub_check.stat.exists
+  when: arch_chroot_check.stat.exists
   shell: |
     arch-chroot /mnt pacman -Syu --noconfirm grub
     arch-chroot /mnt grub-install /dev/vda
     arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
-- name: Check if dhcpcd is installed
-  stat:
-    path: /mnt/usr/bin/dhcpcd
-  register: dhcpcd_check
-
 - name: Install and enable dhcpcd
-  when: not dhcpcd_check.stat.exists
+  when: arch_chroot_check.stat.exists
   shell: |
     arch-chroot /mnt pacman -Syu --noconfirm dhcpcd
     arch-chroot /mnt systemctl enable dhcpcd
 
-- name: Check if python is installed
-  stat:
-    path: /mnt/usr/bin/python
-  register: python_check
-
 - name: Install python and pexpect
-  when: not python_check.stat.exists
+  when: arch_chroot_check.stat.exists
   shell: arch-chroot /mnt pacman -Syu --noconfirm python-pexpect
-
-- name: Check if arch-chroot is installed
-  stat:
-    path: /bin/arch-chroot
-  register: arch_chroot_check
 
 - name: Set root password
   when: arch_chroot_check.stat.exists
@@ -83,19 +46,9 @@
       'New password': "root"
       'Retype new password': 'root'
 
-- name: Check if SSH is installed
-  stat:
-    path: /mnt/usr/bin/ssh
-  register: ssh_check
-
 - name: Install and enable SSHd
-  when: not ssh_check.stat.exists
+  when: arch_chroot_check.stat.exists
   shell: |
     arch-chroot /mnt pacman -Syu --noconfirm openssh
     arch-chroot /mnt systemctl enable sshd
     echo "PermitRootLogin yes" >> /mnt/etc/ssh/sshd_config
-
-- name: Reboot
-  when: arch_chroot_check.stat.exists
-  include_role: 
-    name: reboot

@@ -1,4 +1,4 @@
-- name: Archlinux VM bootstrap
+- name: Archlinux setup
   hosts: vms
   vars_prompt:
     - name: username
@@ -7,7 +7,6 @@
       prompt: 'Password of new user'
       private: true
   roles:
-    - bootstrap
     - common
     - display-server-xorg
     - localisation
